@@ -2,10 +2,15 @@ jQuery(function() {
   var url = 'http://search.twitter.com/search.json?q=%23BusaoSP&rpp=10';
   var dataset = null;
   var datahubUrl = 'http://datahub.io/api/data/bc739cd5-1bf3-45ac-b367-5b2321477032'
-  var datahub = new recline.Backend.ElasticSearch({
-    url: datahubUrl,
-    headers: { 'Authorization': CONFIG['datahub.io'].authorization }
-  });
+  var datahub = null;
+  if (typeof CONFIG === 'undefind' && CONFIG['datahub.io']) {
+    var datahub = new recline.Backend.ElasticSearch({
+      url: datahubUrl,
+      headers: { 'Authorization': CONFIG['datahub.io'].authorization }
+    });
+  } else {
+    alert('Uploading to datahub disabled as no API key');
+  }
 
   $.ajax({
     url: url,
@@ -23,9 +28,11 @@ jQuery(function() {
     dataset.query().done(function() {
       dataset.currentDocuments.each(function(doc) {
         geocode(doc, function() {
-          datahub.upsert(doc).done(function() {
-            // console.log(doc.toJSON());
-          });
+          if (datahub) {
+            datahub.upsert(doc).done(function() {
+              // console.log(doc.toJSON());
+            });
+          }
         });
       });
     });
