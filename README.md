@@ -1,5 +1,7 @@
 BusaoSP: Where Is the Bus?
 
+Dataset online at: <http://datahub.io/dataset/busaosp/resource/bc739cd5-1bf3-45ac-b367-5b2321477032>
+
 ## Developers
 
 You will need to install the git submodules:
