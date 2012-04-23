@@ -14,10 +14,52 @@ jQuery(function() {
   });
 
   function showData(data) {
+    var dataset = makeDataset(data);
+    var grid = new recline.View.Grid({
+      model: dataset
+    });
+    $('body').append(grid.el);
+
+    dataset.query().done(function() {
+      dataset.currentDocuments.each(function(doc) {
+        geocode(doc, function() {
+          datahub.upsert(doc).done(function() {
+            // console.log(doc.toJSON());
+          });
+        });
+      });
+    });
+  }
+
+  function geocode(doc, callback) {
+    var loc = doc.get('text').match(/na (.*) as/);
+    if (loc) {
+      loc = loc[1];
+      var geocoder = new google.maps.Geocoder();
+      geocoder.geocode(
+        {
+          'address': loc,
+          'region': 'zkp'
+        }, function(data, status) {
+          if (data) {
+            var latlng = data[0].geometry.location;
+            doc.set({lat: latlng.lat(), lon: latlng.lng()});
+          }
+          callback(doc);
+        }
+      );
+    } else {
+      callback(doc)
+    }
+  }
+
+  function makeDataset(twitterData) {
     var fields = [
       {id: 'created_at', type: 'dateTime'},
       {id: 'text'},
       {id: 'geo'},
+      {id: 'lon'},
+      {id: 'lat'},
       {
         id: 'link',
         is_derived: true,
@@ -25,22 +67,14 @@ jQuery(function() {
         format: 'link'
       }
     ];
+    dataset = recline.Backend.createDataset(twitterData.results, fields);
+
+    // add derived link field
     var linkDeriver = function(value, field, doc) {
       return 'https://twitter.com/USER/status/ID'.replace('USER', doc.get('from_user')).replace('ID', doc.get('id'))
     };
-    dataset = recline.Backend.createDataset(data.results, fields);
     dataset.fields.get('link').deriver = linkDeriver;
-    var grid = new recline.View.Grid({
-      model: dataset
-    });
-    $('body').append(grid.el);
-    dataset.query().done(function() {
-      dataset.currentDocuments.each(function(doc) {
-        console.log(datahub);
-        datahub.upsert(doc).done(function() {
-          console.log('ok');
-        });;
-      });
-    });
+
+    return dataset;
   }
 });
