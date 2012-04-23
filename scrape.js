@@ -1,11 +1,18 @@
 jQuery(function() {
   var url = 'http://search.twitter.com/search.json?q=%23BusaoSP&rpp=10';
   var dataset = null;
+  var datahubUrl = 'http://datahub.io/api/data/bc739cd5-1bf3-45ac-b367-5b2321477032'
+  var datahub = new recline.Backend.ElasticSearch({
+    url: datahubUrl,
+    headers: { 'Authorization': CONFIG['datahub.io'].authorization }
+  });
+
   $.ajax({
     url: url,
     dataType: 'jsonp',
     success: showData
   });
+
   function showData(data) {
     var fields = [
       {id: 'created_at', type: 'dateTime'},
@@ -27,6 +34,13 @@ jQuery(function() {
       model: dataset
     });
     $('body').append(grid.el);
-    dataset.query();
+    dataset.query().done(function() {
+      dataset.currentDocuments.each(function(doc) {
+        console.log(datahub);
+        datahub.upsert(doc).done(function() {
+          console.log('ok');
+        });;
+      });
+    });
   }
 });
