@@ -3,7 +3,7 @@ jQuery(function() {
   var dataset = null;
   var datahubUrl = 'http://datahub.io/api/data/bc739cd5-1bf3-45ac-b367-5b2321477032'
   var datahub = null;
-  if (typeof CONFIG === 'undefined' && CONFIG['datahub.io']) {
+  if (typeof CONFIG !== 'undefined' && CONFIG['datahub.io']) {
     var datahub = new recline.Backend.ElasticSearch({
       url: datahubUrl,
       headers: { 'Authorization': CONFIG['datahub.io'].authorization }
@@ -30,7 +30,8 @@ jQuery(function() {
         geocode(doc, function() {
           if (datahub) {
             datahub.upsert(doc).done(function() {
-              // console.log(doc.toJSON());
+              console.log('Uploaded to DataHub OK: ' + doc.id);
+              console.log(doc.toJSON());
             });
           }
         });
